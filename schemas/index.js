@@ -1,8 +1,4 @@
 const gql = require('graphql-tag');
-const User = require('../models/User');
-const Blog = require('../models/Blog');
-const Comment = require('../models/Comment');
-const Like = require('../models/Like');
 
 const typeDefs = gql`
   scalar Upload
@@ -11,6 +7,7 @@ const typeDefs = gql`
     id: ID!
     username: String!
     email: String!
+    image: String! # Base64-encoded image data
     createdAt: String!
   }
 
@@ -46,14 +43,21 @@ const typeDefs = gql`
     user: User!
   }
 
+  input RegisterInput {
+    username: String!
+    email: String!
+    password: String!
+    image: Upload! # Changed to Upload for form-data
+  }
+
   type Query {
-    me: User
+    currentUser: User # Renamed from 'me' to 'currentUser'
     blogs: [Blog!]!
     blog(id: ID!): Blog
   }
 
   type Mutation {
-    register(username: String!, email: String!, password: String!): AuthPayload!
+    register(input: RegisterInput!): AuthPayload!
     login(email: String!, password: String!): AuthPayload!
     refreshToken(refreshToken: String!): AuthPayload!
     createBlog(title: String!, content: String!, image: Upload!): Blog!

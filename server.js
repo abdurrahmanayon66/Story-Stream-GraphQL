@@ -2,8 +2,6 @@ const express = require('express');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -17,8 +15,6 @@ const authMiddleware = require('./middleware/auth');
 
 // Load environment variables
 dotenv.config();
-console.log('JWT_SECRET:', process.env.JWT_SECRET);
-console.log('JWT_REFRESH_SECRET:', process.env.JWT_REFRESH_SECRET);
 
 // Initialize Express app
 const app = express();
@@ -51,18 +47,14 @@ const server = new ApolloServer({
   })
 });
 
-// Apply middleware and start server
 async function startServer() {
   await server.start();
 
-  // Apply graphql-upload middleware for file uploads
-  app.use('/graphql', graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 }));
-
-  // Apply Apollo Server as Express middleware
+  // Only apply graphqlUploadExpress ONCE — and DO NOT use express.json()
   app.use(
     '/graphql',
-    express.json(),
     authMiddleware,
+    graphqlUploadExpress({ maxFileSize: 10_000_000, maxFiles: 1 }),
     expressMiddleware(server)
   );
 
@@ -73,7 +65,7 @@ async function startServer() {
   });
 
   app.listen({ port: process.env.PORT || 4000 }, () =>
-    console.log(`Server running at ${process.env.PORT || 4000}/graphql`)
+    console.log(`Server running at http://localhost:${process.env.PORT || 4000}/graphql`)
   );
 }
 
