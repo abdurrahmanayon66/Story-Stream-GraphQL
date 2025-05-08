@@ -1,0 +1,52 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  image     Bytes
+  createdAt DateTime @default(now())
+  blogs     Blog[]   // One-to-many relation with Blog
+  comments  Comment[] // One-to-many relation with Comment
+  likes     Like[]   // One-to-many relation with Like
+}
+
+model Blog {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  image     Bytes
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  comments  Comment[] // One-to-many relation with Comment
+  likes     Like[]   // One-to-many relation with Like
+  createdAt DateTime @default(now())
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.Text
+  blogId    Int
+  blog      Blog     @relation(fields: [blogId], references: [id])
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  blogId    Int
+  blog      Blog     @relation(fields: [blogId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  @@unique([blogId, userId]) // Ensure a user can only like a blog once
+}

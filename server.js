@@ -1,17 +1,15 @@
 const express = require('express');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
-const mongoose = require('mongoose');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const { check, validationResult } = require('express-validator');
 const dotenv = require('dotenv');
 const { graphqlUploadExpress, GraphQLUpload } = require('graphql-upload');
-
 const typeDefs = require('./schemas');
 const resolvers = require('./resolvers');
 const authMiddleware = require('./middleware/auth');
+const { prisma, connectDB } = require('./config/db');
 
 // Load environment variables
 dotenv.config();
@@ -21,41 +19,53 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000' }));
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // Limit each IP to 100 requests per windowMs
-}));
-
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error(`MongoDB connection error: ${err.message}`));
+app.use(cors({ origin: process.env.FRONTEND_URL}));
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+  })
+);
 
 // Combine resolvers with Upload scalar
 const serverResolvers = {
   Upload: GraphQLUpload,
-  ...resolvers
+  ...resolvers,
 };
 
 // Apollo Server setup for v4
 const server = new ApolloServer({
   typeDefs,
   resolvers: serverResolvers,
-  context: ({ req }) => ({
-    user: req.user
-  })
+  // Updated to fix context handling
+  formatError: (error) => {
+    console.error('GraphQL Error:', error);
+    return error;
+  },
 });
 
 async function startServer() {
+  await connectDB();
   await server.start();
 
-  // Only apply graphqlUploadExpress ONCE — and DO NOT use express.json()
+  // Apply JSON parsing middleware before GraphQL middleware
+  app.use('/graphql', express.json());
+
+  // Apply auth middleware and graphqlUploadExpress for file uploads
   app.use(
     '/graphql',
     authMiddleware,
     graphqlUploadExpress({ maxFileSize: 10_000_000, maxFiles: 1 }),
-    expressMiddleware(server)
+    expressMiddleware(server, {
+      // Move context function here for expressMiddleware
+      context: async ({ req }) => {
+        const context = {
+          user: req.user,
+          prisma,
+        };
+        return context;
+      }
+    })
   );
 
   // Global error handler
@@ -64,9 +74,12 @@ async function startServer() {
     res.status(500).json({ error: 'Internal server error' });
   });
 
-  app.listen({ port: process.env.PORT || 4000 }, () =>
-    console.log(`Server running at http://localhost:${process.env.PORT || 4000}/graphql`)
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () =>
+    console.log(`Server running at http://localhost:${PORT}/graphql`)
   );
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+});

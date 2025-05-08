@@ -1,16 +1,14 @@
-const mongoose = require('mongoose');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-    logger.info('MongoDB connected');
+    await prisma.$connect();
+    console.log('PostgreSQL connected via Prisma');
   } catch (err) {
-    logger.error('MongoDB connection error:', err);
+    console.log('PostgreSQL connection error:', err);
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+module.exports = { prisma, connectDB };

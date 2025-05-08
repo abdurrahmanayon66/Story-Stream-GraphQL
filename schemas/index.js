@@ -1,40 +1,42 @@
-const gql = require('graphql-tag');
+const { gql } = require('graphql-tag');
 
+// 1. Define the GraphQL Schema
 const typeDefs = gql`
   scalar Upload
+  scalar DateTime
 
   type User {
-    id: ID!
+    id: Int!
     username: String!
     email: String!
     image: String! # Base64-encoded image data
-    createdAt: String!
+    createdAt: DateTime!
   }
 
   type Blog {
-    id: ID!
+    id: Int!
     title: String!
     content: String!
     image: String! # Base64 string
     author: User!
-    createdAt: String!
+    createdAt: DateTime!
     comments: [Comment!]!
     likes: [Like!]!
   }
 
   type Comment {
-    id: ID!
+    id: Int!
     content: String!
     blog: Blog!
     author: User!
-    createdAt: String!
+    createdAt: DateTime!
   }
 
   type Like {
-    id: ID!
+    id: Int!
     blog: Blog!
     user: User!
-    createdAt: String!
+    createdAt: DateTime!
   }
 
   type AuthPayload {
@@ -43,26 +45,33 @@ const typeDefs = gql`
     user: User!
   }
 
+  type AuthError {
+    message: String!
+    code: String
+  }
+
+  union AuthResult = AuthPayload | AuthError
+
   input RegisterInput {
     username: String!
     email: String!
     password: String!
-    image: Upload! # Changed to Upload for form-data
+    image: Upload!
   }
 
   type Query {
-    currentUser: User # Renamed from 'me' to 'currentUser'
+    currentUser: User
     blogs: [Blog!]!
-    blog(id: ID!): Blog
+    blog(id: Int!): Blog
   }
 
   type Mutation {
-    register(input: RegisterInput!): AuthPayload!
-    login(email: String!, password: String!): AuthPayload!
+    register(input: RegisterInput!): AuthResult!
+    login(email: String!, password: String!): AuthResult!
     refreshToken(refreshToken: String!): AuthPayload!
     createBlog(title: String!, content: String!, image: Upload!): Blog!
-    createComment(blogId: ID!, content: String!): Comment!
-    likeBlog(blogId: ID!): Like!
+    createComment(blogId: Int!, content: String!): Comment!
+    likeBlog(blogId: Int!): Like!
   }
 `;
 
