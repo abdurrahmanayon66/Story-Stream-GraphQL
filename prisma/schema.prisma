@@ -8,15 +8,17 @@ generator client {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @db.VarChar(255)
-  email     String   @unique @db.VarChar(255)
-  password  String   @db.VarChar(255)
-  image     Bytes
-  createdAt DateTime @default(now())
-  blogs     Blog[]   // One-to-many relation with Blog
-  comments  Comment[] // One-to-many relation with Comment
-  likes     Like[]   // One-to-many relation with Like
+  id           Int      @id @default(autoincrement())
+  username     String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  password     String?  @db.VarChar(255)
+  providerId   String?  @unique @db.VarChar(255)
+  image        Bytes?   // Optional: for regular users' uploaded images
+  profileImage String?  @db.VarChar(255) // Optional: for Google users' profile picture URL
+  createdAt    DateTime @default(now())
+  blogs        Blog[]   // One-to-many relation with Blog
+  comments     Comment[] // One-to-many relation with Comment
+  likes        Like[]   // One-to-many relation with Like
 }
 
 model Blog {
