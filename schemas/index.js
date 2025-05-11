@@ -1,6 +1,5 @@
 const { gql } = require('graphql-tag');
 
-// 1. Define the GraphQL Schema
 const typeDefs = gql`
   scalar Upload
   scalar DateTime
@@ -9,7 +8,8 @@ const typeDefs = gql`
     id: Int!
     username: String!
     email: String!
-    image: String! # Base64-encoded image data
+    image: String
+    profileImage: String
     createdAt: DateTime!
   }
 
@@ -59,6 +59,14 @@ const typeDefs = gql`
     image: Upload!
   }
 
+  input OAuthInput {
+    provider: String!
+    providerId: String!
+    email: String!
+    name: String
+    profileImage: String
+  }
+
   type Query {
     currentUser: User
     blogs: [Blog!]!
@@ -68,6 +76,7 @@ const typeDefs = gql`
   type Mutation {
     register(input: RegisterInput!): AuthResult!
     login(email: String!, password: String!): AuthResult!
+    oauthLogin(input: OAuthInput!): AuthResult!
     refreshToken(refreshToken: String!): AuthPayload!
     createBlog(title: String!, content: String!, image: Upload!): Blog!
     createComment(blogId: Int!, content: String!): Comment!
