@@ -218,7 +218,7 @@ const resolvers = {
           };
         }
     
-        const isValid = await bcrypt.compare(password, user.password);
+        const isValid = await bcrypt.compare(password, user.password);     
         if (!isValid) {
           return {
             message: 'Invalid credentials',
