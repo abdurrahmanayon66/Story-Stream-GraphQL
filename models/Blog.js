@@ -2,8 +2,9 @@ const mongoose = require('mongoose');
 
 const blogSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  content: { type: String, required: true },
-  image: { type: Buffer, required: true }, // Store image as blob
+  content: { type: mongoose.Schema.Types.Mixed, required: true }, 
+  image: { type: Buffer, required: true },
+  genre: [{ type: String }],
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now }
 });
