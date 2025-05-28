@@ -1,7 +1,7 @@
-const { parseResolveInfo } = require('graphql-parse-resolve-info');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { check, validationResult } = require('express-validator');
+const { parseResolveInfo } = require("graphql-parse-resolve-info");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { check, validationResult } = require("express-validator");
 
 const resolvers = {
   DateTime: {
@@ -10,17 +10,17 @@ const resolvers = {
   AuthResult: {
     __resolveType(obj) {
       if (obj.accessToken && obj.refreshToken) {
-        return 'AuthPayload';
+        return "AuthPayload";
       }
       if (obj.message && obj.code) {
-        return 'AuthError';
+        return "AuthError";
       }
       return null;
     },
   },
   Query: {
     currentUser: async (_, __, { user, prisma }, info) => {
-      if (!user) throw new Error('Unauthorized');
+      if (!user) throw new Error("Unauthorized");
 
       const resolveInfo = parseResolveInfo(info);
       const fields = resolveInfo.fieldsByTypeName.User || {};
@@ -28,13 +28,14 @@ const resolvers = {
       const foundUser = await prisma.user.findUnique({
         where: { id: user.id },
       });
-      if (!foundUser) throw new Error('User not found');
+      if (!foundUser) throw new Error("User not found");
 
       return {
         ...foundUser,
-        image: fields.image && foundUser.image
-          ? Buffer.from(foundUser.image).toString('base64')
-          : null,
+        image:
+          fields.image && foundUser.image
+            ? Buffer.from(foundUser.image).toString("base64")
+            : null,
         profileImage: fields.profileImage ? foundUser.profileImage : null,
       };
     },
@@ -51,14 +52,17 @@ const resolvers = {
 
       return blogs.map((blog) => ({
         ...blog,
-        image: fields.image ? Buffer.from(blog.image).toString('base64') : null,
+        image: fields.image ? Buffer.from(blog.image).toString("base64") : null,
         author: blog.author
           ? {
               ...blog.author,
-              image: fields.author?.image && blog.author.image
-                ? Buffer.from(blog.author.image).toString('base64')
+              image:
+                fields.author?.image && blog.author.image
+                  ? Buffer.from(blog.author.image).toString("base64")
+                  : null,
+              profileImage: fields.author?.profileImage
+                ? blog.author.profileImage
                 : null,
-              profileImage: fields.author?.profileImage ? blog.author.profileImage : null,
             }
           : null,
       }));
@@ -76,18 +80,21 @@ const resolvers = {
         where: { id: parseInt(id) },
         include,
       });
-      if (!blog) throw new Error('Blog not found');
+      if (!blog) throw new Error("Blog not found");
 
       return {
         ...blog,
-        image: fields.image ? Buffer.from(blog.image).toString('base64') : null,
+        image: fields.image ? Buffer.from(blog.image).toString("base64") : null,
         author: blog.author
           ? {
               ...blog.author,
-              image: fields.author?.image && blog.author.image
-                ? Buffer.from(blog.author.image).toString('base64')
+              image:
+                fields.author?.image && blog.author.image
+                  ? Buffer.from(blog.author.image).toString("base64")
+                  : null,
+              profileImage: fields.author?.profileImage
+                ? blog.author.profileImage
                 : null,
-              profileImage: fields.author?.profileImage ? blog.author.profileImage : null,
             }
           : null,
       };
@@ -97,56 +104,60 @@ const resolvers = {
     register: async (_, { input }, { prisma }) => {
       try {
         const { username, email, password, image } = input || {};
-  
+
         const file = image ? await image : null;
-    
-        if (!file || !file.createReadStream || typeof file.createReadStream !== 'function') {
-          console.log('Image validation failed:', { file });
+
+        if (
+          !file ||
+          !file.createReadStream ||
+          typeof file.createReadStream !== "function"
+        ) {
           return {
-            message: 'A valid image file is required',
-            code: 'INVALID_IMAGE',
+            message: "A valid image file is required",
+            code: "INVALID_IMAGE",
           };
         }
-    
-        if (!email.includes('@')) {
+
+        if (!email.includes("@")) {
           return {
-            message: 'Invalid email format',
-            code: 'INVALID_EMAIL',
+            message: "Invalid email format",
+            code: "INVALID_EMAIL",
           };
         }
-    
+
         if (password.length < 6) {
           return {
-            message: 'Password must be at least 6 characters long',
-            code: 'INVALID_PASSWORD',
+            message: "Password must be at least 6 characters long",
+            code: "INVALID_PASSWORD",
           };
         }
-    
+
         try {
-          const existingUser = await prisma.user.findUnique({ where: { email } });
+          const existingUser = await prisma.user.findUnique({
+            where: { email },
+          });
           if (existingUser) {
             return {
-              message: 'Email already in use',
-              code: 'EMAIL_TAKEN',
+              message: "Email already in use",
+              code: "EMAIL_TAKEN",
             };
           }
         } catch (err) {
-          console.error('Error checking existing user:', err);
           return {
             message: `Database error while checking email: ${err.message}`,
-            code: 'DATABASE_ERROR',
+            code: "DATABASE_ERROR",
           };
         }
-    
+
         const stream = file.createReadStream();
         const chunks = [];
         for await (const chunk of stream) {
           chunks.push(chunk);
         }
         const imageBuffer = Buffer.concat(chunks);
-    
+
         const hashedPassword = await bcrypt.hash(password, 12);
-    
+
         let createdUser;
         try {
           createdUser = await prisma.user.create({
@@ -158,30 +169,32 @@ const resolvers = {
             },
           });
         } catch (createErr) {
-          console.error('User creation error:', createErr);
           return {
             message: `Failed to create user: ${createErr.message}`,
-            code: 'USER_CREATION_FAILED',
+            code: "USER_CREATION_FAILED",
           };
         }
-    
+
         if (!createdUser || !createdUser.id) {
-          console.error('User creation failed: No valid user returned');
           return {
-            message: 'Failed to create user: No user returned',
-            code: 'USER_CREATION_FAILED',
+            message: "Failed to create user: No user returned",
+            code: "USER_CREATION_FAILED",
           };
         }
-    
-        const accessToken = jwt.sign({ id: createdUser.id }, process.env.JWT_SECRET, {
-          expiresIn: '15m',
-        });
+
+        const accessToken = jwt.sign(
+          { id: createdUser.id },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "15m",
+          }
+        );
         const refreshToken = jwt.sign(
           { id: createdUser.id },
           process.env.JWT_REFRESH_SECRET,
-          { expiresIn: '7d' }
+          { expiresIn: "7d" }
         );
-    
+
         return {
           accessToken,
           refreshToken,
@@ -189,15 +202,14 @@ const resolvers = {
             id: createdUser.id,
             username: createdUser.username,
             email: createdUser.email,
-            image: Buffer.from(createdUser.image).toString('base64'),
+            image: Buffer.from(createdUser.image).toString("base64"),
             profileImage: null,
           },
         };
       } catch (err) {
-        console.error('Registration error:', err);
         return {
           message: `Internal server error: ${err.message}`,
-          code: 'INTERNAL_ERROR',
+          code: "INTERNAL_ERROR",
         };
       }
     },
@@ -206,35 +218,35 @@ const resolvers = {
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
           return {
-            message: 'Invalid credentials',
-            code: 'INVALID_CREDENTIALS',
+            message: "Invalid credentials",
+            code: "INVALID_CREDENTIALS",
           };
         }
-    
+
         if (!user.password) {
           return {
-            message: 'Account linked to OAuth provider',
-            code: 'OAUTH_ACCOUNT',
+            message: "Account linked to OAuth provider",
+            code: "OAUTH_ACCOUNT",
           };
         }
-    
-        const isValid = await bcrypt.compare(password, user.password);     
+
+        const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) {
           return {
-            message: 'Invalid credentials',
-            code: 'INVALID_CREDENTIALS',
+            message: "Invalid credentials",
+            code: "INVALID_CREDENTIALS",
           };
         }
-    
+
         const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-          expiresIn: '15m',
+          expiresIn: "15m",
         });
         const refreshToken = jwt.sign(
           { id: user.id },
           process.env.JWT_REFRESH_SECRET,
-          { expiresIn: '7d' }
+          { expiresIn: "7d" }
         );
-    
+
         return {
           accessToken,
           refreshToken,
@@ -242,15 +254,16 @@ const resolvers = {
             id: user.id,
             username: user.username,
             email: user.email,
-            image: user.image ? Buffer.from(user.image).toString('base64') : null,
+            image: user.image
+              ? Buffer.from(user.image).toString("base64")
+              : null,
             profileImage: user.profileImage,
           },
         };
       } catch (err) {
-        console.error('Login error:', err);
         return {
           message: `Internal server error: ${err.message}`,
-          code: 'INTERNAL_ERROR',
+          code: "INTERNAL_ERROR",
         };
       }
     },
@@ -260,17 +273,14 @@ const resolvers = {
 
         if (!provider || !providerId || !email) {
           return {
-            message: 'Provider, providerId, and email are required',
-            code: 'INVALID_INPUT',
+            message: "Provider, providerId, and email are required",
+            code: "INVALID_INPUT",
           };
         }
 
         let user = await prisma.user.findFirst({
           where: {
-            OR: [
-              { providerId: `${provider}:${providerId}` },
-              { email },
-            ],
+            OR: [{ providerId: `${provider}:${providerId}` }, { email }],
           },
         });
 
@@ -279,7 +289,7 @@ const resolvers = {
             data: {
               providerId: `${provider}:${providerId}`,
               email,
-              username: name || email.split('@')[0],
+              username: name || email.split("@")[0],
               profileImage,
               password: null,
               image: null,
@@ -293,12 +303,12 @@ const resolvers = {
         }
 
         const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-          expiresIn: '15m',
+          expiresIn: "15m",
         });
         const refreshToken = jwt.sign(
           { id: user.id },
           process.env.JWT_REFRESH_SECRET,
-          { expiresIn: '7d' }
+          { expiresIn: "7d" }
         );
 
         return {
@@ -308,110 +318,164 @@ const resolvers = {
             id: user.id,
             username: user.username,
             email: user.email,
-            image: user.image ? Buffer.from(user.image).toString('base64') : null,
+            image: user.image
+              ? Buffer.from(user.image).toString("base64")
+              : null,
             profileImage: user.profileImage,
           },
         };
       } catch (err) {
-        console.error('OAuth login error:', err);
         return {
           message: `Internal server error: ${err.message}`,
-          code: 'INTERNAL_ERROR',
+          code: "INTERNAL_ERROR",
         };
       }
     },
     refreshToken: async (_, { refreshToken }, { prisma }, info) => {
       try {
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-  
-        const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-        if (!user) throw new Error('Invalid refresh token');
-  
+        const decoded = jwt.verify(
+          refreshToken,
+          process.env.JWT_REFRESH_SECRET
+        );
+
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.id },
+        });
+        if (!user) throw new Error("Invalid refresh token");
+
         const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-          expiresIn: '15m',
+          expiresIn: "15m",
         });
         const newRefreshToken = jwt.sign(
           { id: user.id },
           process.env.JWT_REFRESH_SECRET,
-          { expiresIn: '7d' }
+          { expiresIn: "7d" }
         );
-  
+
         const resolveInfo = parseResolveInfo(info);
         const fields = resolveInfo.fieldsByTypeName.AuthPayload?.user || {};
-  
+
         return {
           accessToken,
           refreshToken: newRefreshToken,
           user: {
             ...user,
-            image: fields.image && user.image
-              ? Buffer.from(user.image).toString('base64')
-              : null,
+            image:
+              fields.image && user.image
+                ? Buffer.from(user.image).toString("base64")
+                : null,
             profileImage: fields.profileImage ? user.profileImage : null,
           },
         };
       } catch (err) {
-        console.error('Refresh token error:', err);
-        throw new Error('Invalid refresh token');
+        throw new Error("Invalid refresh token");
       }
     },
-    createBlog: async (_, { title, content, image }, { user, prisma }, info) => {
-      if (!user) throw new Error('Unauthorized');
-
-      if (!image || !image.file) {
-        throw new Error('A valid image file is required');
+    createBlog: async (
+      _,
+      { title, content, image, genre },
+      { user, prisma },
+      info
+    ) => {
+      if (!user) {
+        throw new Error("Unauthorized");
       }
 
-      const { createReadStream } = await image.file;
-      if (!createReadStream) throw new Error('A valid image file is required');
+      let imageFile = null;
+      let imageBuffer = null;
 
-      const chunks = [];
-      const stream = createReadStream();
-      for await (const chunk of stream) {
-        chunks.push(chunk);
+      try {
+        if (image && image.file) {
+          imageFile = await image.file;
+        }
+        else if (image && image.createReadStream) {
+          imageFile = image;
+        }
+        else if (image && typeof image.then === 'function') {
+          imageFile = await image;
+        }
+        else if (image) {
+          imageFile = image;
+        }
+
+        if (!imageFile) {
+          throw new Error("A valid image file is required - no image file detected");
+        }
+
+        if (!imageFile.createReadStream || typeof imageFile.createReadStream !== 'function') {
+          throw new Error("A valid image file is required - no createReadStream method");
+        }
+
+        const stream = imageFile.createReadStream();
+        const chunks = [];
+        
+        for await (const chunk of stream) {
+          chunks.push(chunk);
+        }
+        
+        imageBuffer = Buffer.concat(chunks);
+
+        if (imageBuffer.length === 0) {
+          throw new Error("Image file appears to be empty");
+        }
+
+      } catch (imageError) {
+        throw new Error(`Image processing failed: ${imageError.message}`);
       }
-      const imageBuffer = Buffer.concat(chunks);
 
-      const blog = await prisma.blog.create({
-        data: {
+      try {
+        const blogData = {
           title,
           content,
           image: imageBuffer,
+          genre,
           authorId: user.id,
-        },
-      });
+        };
 
-      const resolveInfo = parseResolveInfo(info);
-      const fields = resolveInfo.fieldsByTypeName.Blog || {};
-
-      let author = null;
-      if (fields.author) {
-        author = await prisma.user.findUnique({
-          where: { id: blog.authorId },
+        const blog = await prisma.blog.create({
+          data: blogData,
         });
-      }
 
-      return {
-        ...blog,
-        image: fields.image ? Buffer.from(blog.image).toString('base64') : null,
-        author: author
-          ? {
-              ...author,
-              image: fields.author?.image && author.image
-                ? Buffer.from(author.image).toString('base64')
-                : null,
-              profileImage: fields.author?.profileImage ? author.profileImage : null,
-            }
-          : null,
-        comments: [],
-        likes: [],
-      };
+        const resolveInfo = parseResolveInfo(info);
+        const fields = resolveInfo.fieldsByTypeName.Blog || {};
+
+        let author = null;
+        if (fields.author) {
+          author = await prisma.user.findUnique({
+            where: { id: blog.authorId },
+          });
+        }
+
+        const response = {
+          ...blog,
+          image: fields.image ? Buffer.from(blog.image).toString("base64") : null,
+          author: author
+            ? {
+                ...author,
+                image:
+                  fields.author?.image && author.image
+                    ? Buffer.from(author.image).toString("base64")
+                    : null,
+                profileImage: fields.author?.profileImage
+                  ? author.profileImage
+                  : null,
+              }
+            : null,
+          comments: [],
+          likes: [],
+        };
+
+        return response;
+
+      } catch (dbError) {
+        throw new Error(`Database operation failed: ${dbError.message}`);
+      }
     },
     createComment: async (_, { blogId, content }, { user, prisma }, info) => {
-      if (!user) throw new Error('Unauthorized');
+      if (!user) throw new Error("Unauthorized");
 
       const blog = await prisma.blog.findUnique({ where: { id: blogId } });
-      if (!blog) throw new Error('Blog not found');
+      if (!blog) throw new Error("Blog not found");
 
       const comment = await prisma.comment.create({
         data: {
@@ -442,32 +506,35 @@ const resolvers = {
         author: author
           ? {
               ...author,
-              image: fields.author?.image && author.image
-                ? Buffer.from(author.image).toString('base64')
+              image:
+                fields.author?.image && author.image
+                  ? Buffer.from(author.image).toString("base64")
+                  : null,
+              profileImage: fields.author?.profileImage
+                ? author.profileImage
                 : null,
-              profileImage: fields.author?.profileImage ? author.profileImage : null,
             }
           : null,
         blog: blogData
           ? {
               ...blogData,
               image: fields.blog?.image
-                ? Buffer.from(blogData.image).toString('base64')
+                ? Buffer.from(blogData.image).toString("base64")
                 : null,
             }
           : null,
       };
     },
     likeBlog: async (_, { blogId }, { user, prisma }, info) => {
-      if (!user) throw new Error('Unauthorized');
+      if (!user) throw new Error("Unauthorized");
 
       const blog = await prisma.blog.findUnique({ where: { id: blogId } });
-      if (!blog) throw new Error('Blog not found');
+      if (!blog) throw new Error("Blog not found");
 
       const existingLike = await prisma.like.findUnique({
         where: { blogId_userId: { blogId, userId: user.id } },
       });
-      if (existingLike) throw new Error('Blog already liked');
+      if (existingLike) throw new Error("Blog already liked");
 
       const like = await prisma.like.create({
         data: {
@@ -497,17 +564,20 @@ const resolvers = {
         user: likeUser
           ? {
               ...likeUser,
-              image: fields.user?.image && likeUser.image
-                ? Buffer.from(likeUser.image).toString('base64')
+              image:
+                fields.user?.image && likeUser.image
+                  ? Buffer.from(likeUser.image).toString("base64")
+                  : null,
+              profileImage: fields.user?.profileImage
+                ? likeUser.profileImage
                 : null,
-              profileImage: fields.user?.profileImage ? likeUser.profileImage : null,
             }
           : null,
         blog: likeBlog
           ? {
               ...likeBlog,
               image: fields.blog?.image
-                ? Buffer.from(likeBlog.image).toString('base64')
+                ? Buffer.from(likeBlog.image).toString("base64")
                 : null,
             }
           : null,
