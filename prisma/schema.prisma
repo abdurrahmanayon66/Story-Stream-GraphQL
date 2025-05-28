@@ -24,8 +24,9 @@ model User {
 model Blog {
   id        Int      @id @default(autoincrement())
   title     String   @db.VarChar(255)
-  content   String   @db.Text
+  content   Json     // Changed to Json
   image     Bytes
+  genre     String[] // Added genre field as array of strings
   authorId  Int
   author    User     @relation(fields: [authorId], references: [id])
   comments  Comment[] // One-to-many relation with Comment

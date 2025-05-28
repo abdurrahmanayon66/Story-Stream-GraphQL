@@ -3,6 +3,7 @@ const { gql } = require('graphql-tag');
 const typeDefs = gql`
   scalar Upload
   scalar DateTime
+  scalar JSON
 
   type User {
     id: Int!
@@ -16,8 +17,9 @@ const typeDefs = gql`
   type Blog {
     id: Int!
     title: String!
-    content: String!
-    image: String! # Base64 string
+    content: JSON! # Changed from String! to JSON!
+    image: String!  # Base64 string
+    genre: [String!]! # New field
     author: User!
     createdAt: DateTime!
     comments: [Comment!]!
@@ -78,7 +80,7 @@ const typeDefs = gql`
     login(email: String!, password: String!): AuthResult!
     oauthLogin(input: OAuthInput!): AuthResult!
     refreshToken(refreshToken: String!): AuthPayload!
-    createBlog(title: String!, content: String!, image: Upload!): Blog!
+    createBlog(title: String!, content: JSON!, image: Upload!, genre: [String!]!): Blog!
     createComment(blogId: Int!, content: String!): Comment!
     likeBlog(blogId: Int!): Like!
   }
