@@ -202,7 +202,6 @@ const resolvers = {
             id: createdUser.id,
             username: createdUser.username,
             email: createdUser.email,
-            image: Buffer.from(createdUser.image).toString("base64"),
             profileImage: null,
           },
         };
@@ -254,10 +253,7 @@ const resolvers = {
             id: user.id,
             username: user.username,
             email: user.email,
-            image: user.image
-              ? Buffer.from(user.image).toString("base64")
-              : null,
-            profileImage: user.profileImage,
+            profileImage: user?.profileImage || null,
           },
         };
       } catch (err) {
@@ -318,10 +314,7 @@ const resolvers = {
             id: user.id,
             username: user.username,
             email: user.email,
-            image: user.image
-              ? Buffer.from(user.image).toString("base64")
-              : null,
-            profileImage: user.profileImage,
+            profileImage: user?.profileImage || null,
           },
         };
       } catch (err) {
