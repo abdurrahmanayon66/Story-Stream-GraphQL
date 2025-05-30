@@ -7,7 +7,7 @@ const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const { graphqlUploadExpress, GraphQLUpload } = require('graphql-upload');
 const typeDefs = require('./schemas');
-const resolvers = require('./resolvers');
+const resolvers = require('./resolvers/index');
 const authMiddleware = require('./middleware/auth');
 const { prisma, connectDB } = require('./config/db');
 
