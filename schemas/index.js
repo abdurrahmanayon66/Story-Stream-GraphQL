@@ -88,10 +88,17 @@ const typeDefs = gql`
     profileImage: String
   }
 
+  type UsernameAvailability {
+    exists: Boolean!
+  }
+
   type Query {
     currentUser: User
     blogs: [Blog!]!
     blog(id: Int!): Blog
+
+    # New query to check username availability
+    isUsernameAvailable(username: String!): UsernameAvailability!
   }
 
   type Mutation {
