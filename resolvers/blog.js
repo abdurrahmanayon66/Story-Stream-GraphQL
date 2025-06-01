@@ -1,5 +1,5 @@
-// resolvers/blog.js
 const { parseResolveInfo } = require("graphql-parse-resolve-info");
+const generateSlug = require("../utils/generateSlug");
 
 module.exports = {
   Query: {
@@ -31,6 +31,7 @@ module.exports = {
           : null,
       }));
     },
+
     blog: async (_, { id }, { prisma }, info) => {
       const resolveInfo = parseResolveInfo(info);
       const fields = resolveInfo.fieldsByTypeName.Blog || {};
@@ -44,6 +45,7 @@ module.exports = {
         where: { id: parseInt(id) },
         include,
       });
+
       if (!blog) throw new Error("Blog not found");
 
       return {
@@ -64,6 +66,7 @@ module.exports = {
       };
     },
   },
+
   Mutation: {
     createBlog: async (
       _,
@@ -71,63 +74,46 @@ module.exports = {
       { user, prisma },
       info
     ) => {
-      if (!user) {
-        throw new Error("Unauthorized");
-      }
+      if (!user) throw new Error("Unauthorized");
 
       let imageFile = null;
       let imageBuffer = null;
 
       try {
-        if (image && image.file) {
-          imageFile = await image.file;
-        }
-        else if (image && image.createReadStream) {
-          imageFile = image;
-        }
-        else if (image && typeof image.then === 'function') {
-          imageFile = await image;
-        }
-        else if (image) {
-          imageFile = image;
-        }
+        if (image?.file) imageFile = await image.file;
+        else if (image?.createReadStream) imageFile = image;
+        else if (typeof image?.then === "function") imageFile = await image;
+        else if (image) imageFile = image;
 
-        if (!imageFile) {
-          throw new Error("A valid image file is required - no image file detected");
-        }
-
-        if (!imageFile.createReadStream || typeof imageFile.createReadStream !== 'function') {
-          throw new Error("A valid image file is required - no createReadStream method");
+        if (!imageFile || typeof imageFile.createReadStream !== "function") {
+          throw new Error("A valid image file is required");
         }
 
         const stream = imageFile.createReadStream();
         const chunks = [];
-        
-        for await (const chunk of stream) {
-          chunks.push(chunk);
-        }
-        
+        for await (const chunk of stream) chunks.push(chunk);
         imageBuffer = Buffer.concat(chunks);
-
-        if (imageBuffer.length === 0) {
-          throw new Error("Image file appears to be empty");
-        }
-
-      } catch (imageError) {
-        throw new Error(`Image processing failed: ${imageError.message}`);
+        if (!imageBuffer.length) throw new Error("Image file is empty");
+      } catch (error) {
+        throw new Error(`Image processing failed: ${error.message}`);
       }
 
-      try {
-        const blogData = {
-          title,
-          content,
-          image: imageBuffer,
-          genre,
-          authorId: user.id,
-        };
+      // Generate unique slug
+      const slug = await generateSlug(title, async (slug) => {
+        const existing = await prisma.blog.findUnique({ where: { slug } });
+        return !!existing;
+      });
 
+      try {
         const blog = await prisma.blog.create({
-          data: blogData,
+          data: {
+            title,
+            slug,
+            content,
+            image: imageBuffer,
+            genre,
+            authorId: user.id,
+          },
         });
 
         const resolveInfo = parseResolveInfo(info);
@@ -140,7 +126,7 @@ module.exports = {
           });
         }
 
-        const response = {
+        return {
           ...blog,
           image: fields.image ? Buffer.from(blog.image).toString("base64") : null,
           author: author
@@ -158,13 +144,11 @@ module.exports = {
           comments: [],
           likes: [],
         };
-
-        return response;
-
-      } catch (dbError) {
-        throw new Error(`Database operation failed: ${dbError.message}`);
+      } catch (err) {
+        throw new Error(`Database operation failed: ${err.message}`);
       }
     },
+
     likeBlog: async (_, { blogId }, { user, prisma }, info) => {
       if (!user) throw new Error("Unauthorized");
 
@@ -177,10 +161,7 @@ module.exports = {
       if (existingLike) throw new Error("Blog already liked");
 
       const like = await prisma.like.create({
-        data: {
-          blogId,
-          userId: user.id,
-        },
+        data: { blogId, userId: user.id },
       });
 
       const resolveInfo = parseResolveInfo(info);
@@ -188,6 +169,7 @@ module.exports = {
 
       let likeUser = null;
       let likeBlog = null;
+
       if (fields.user) {
         likeUser = await prisma.user.findUnique({
           where: { id: like.userId },

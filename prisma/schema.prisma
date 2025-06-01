@@ -8,31 +8,63 @@ generator client {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @db.VarChar(255)
-  email        String   @unique @db.VarChar(255)
-  password     String?  @db.VarChar(255)
-  providerId   String?  @unique @db.VarChar(255)
-  image        Bytes?   // Optional: for regular users' uploaded images
-  profileImage String?  @db.VarChar(255) // Optional: for Google users' profile picture URL
-  createdAt    DateTime @default(now())
-  blogs        Blog[]   // One-to-many relation with Blog
-  comments     Comment[] // One-to-many relation with Comment
-  likes        Like[]   // One-to-many relation with Like
+  id           Int        @id @default(autoincrement())
+  username     String     @unique @db.VarChar(255)
+  fullName     String?    @db.VarChar(255)
+  userBio      String?    @db.Text
+  email        String     @unique @db.VarChar(255)
+  password     String?    @db.VarChar(255)
+  providerId   String?    @unique @db.VarChar(255)
+  image        Bytes?
+  profileImage String?    @db.VarChar(255)
+  createdAt    DateTime   @default(now())
+
+  blogs        Blog[]
+  comments     Comment[]
+  likes        Like[]
+  bookmarks Bookmark[]
+
+  followers    Follower[] @relation("UserFollowed")  // Users following this user
+  following    Follower[] @relation("UserFollower")  // Users this user follows
+}
+
+model Follower {
+  id         Int   @id @default(autoincrement())
+  userId     Int
+  followerId Int
+
+  user       User  @relation("UserFollowed", fields: [userId], references: [id])
+  follower   User  @relation("UserFollower", fields: [followerId], references: [id])
+
+  @@unique([userId, followerId]) // Prevent duplicate follows
+}
+
+model Bookmark {
+  id      Int   @id @default(autoincrement())
+  userId  Int
+  blogId  Int
+
+  user    User  @relation(fields: [userId], references: [id])
+  blog    Blog  @relation(fields: [blogId], references: [id])
+
+  @@unique([userId, blogId]) // Prevent bookmarking the same blog multiple times
 }
 
 model Blog {
   id        Int      @id @default(autoincrement())
-  title     String   @db.VarChar(255)
-  content   Json     // Changed to Json
+  title     String   @unique @db.VarChar(255) 
+  slug      String   @unique @db.VarChar(255) 
+  content   Json
   image     Bytes
-  genre     String[] // Added genre field as array of strings
+  genre     String[]
   authorId  Int
   author    User     @relation(fields: [authorId], references: [id])
-  comments  Comment[] // One-to-many relation with Comment
-  likes     Like[]   // One-to-many relation with Like
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
   createdAt DateTime @default(now())
 }
+
 
 model Comment {
   id        Int      @id @default(autoincrement())
@@ -51,5 +83,6 @@ model Like {
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+
   @@unique([blogId, userId]) // Ensure a user can only like a blog once
 }

@@ -8,22 +8,29 @@ const typeDefs = gql`
   type User {
     id: Int!
     username: String!
+    fullName: String
+    userBio: String
     email: String!
     image: String
     profileImage: String
     createdAt: DateTime!
+    followers: [Follower!]!
+    following: [Follower!]!
+    bookmarks: [Bookmark!]!
   }
 
   type Blog {
     id: Int!
     title: String!
-    content: JSON! # Changed from String! to JSON!
-    image: String!  # Base64 string
-    genre: [String!]! # New field
+    slug: String!
+    content: JSON!
+    image: String!         # Base64-encoded image
+    genre: [String!]!
     author: User!
     createdAt: DateTime!
     comments: [Comment!]!
     likes: [Like!]!
+    bookmarks: [Bookmark!]!
   }
 
   type Comment {
@@ -39,6 +46,18 @@ const typeDefs = gql`
     blog: Blog!
     user: User!
     createdAt: DateTime!
+  }
+
+  type Follower {
+    id: Int!
+    user: User!         # The user who is being followed
+    follower: User!     # The user who follows
+  }
+
+  type Bookmark {
+    id: Int!
+    user: User!
+    blog: Blog!
   }
 
   type AuthPayload {
@@ -80,9 +99,18 @@ const typeDefs = gql`
     login(email: String!, password: String!): AuthResult!
     oauthLogin(input: OAuthInput!): AuthResult!
     refreshToken(refreshToken: String!): AuthPayload!
-    createBlog(title: String!, content: JSON!, image: Upload!, genre: [String!]!): Blog!
+
+    createBlog(
+      title: String!
+      content: JSON!
+      image: Upload!
+      genre: [String!]!
+    ): Blog!
+
     createComment(blogId: Int!, content: String!): Comment!
     likeBlog(blogId: Int!): Like!
+    bookmarkBlog(blogId: Int!): Bookmark!
+    followUser(userId: Int!): Follower!
   }
 `;
 
