@@ -21,8 +21,9 @@ module.exports = {
         profileImage: fields.profileImage ? foundUser.profileImage : null,
       };
     },
-    
+
     isUsernameAvailable: async (_, { username }, { prisma }) => {
+      console.log("username", username);
       if (!username || typeof username !== 'string') {
         throw new Error("Invalid or missing username");
       }

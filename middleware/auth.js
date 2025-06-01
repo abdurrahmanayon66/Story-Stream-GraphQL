@@ -5,9 +5,10 @@ const { parse, getOperationAST } = require('graphql');
 const prisma = new PrismaClient();
 
 const PUBLIC_MUTATIONS = ['login', 'register', 'oauthLogin'];
+const PUBLIC_QUERIES = ['isUsernameAvailable'];
 
 const authMiddleware = async (req, res, next) => {
-  // If there's no query, just continue (or block, your choice)
+  // If there's no query, just continue
   if (!req.body || !req.body.query) {
     req.user = null;
     return next();
@@ -22,7 +23,23 @@ const authMiddleware = async (req, res, next) => {
       return next();
     }
 
-    if (operationAST.operation === 'mutation') {
+    // Check if the operation is a query or mutation
+    const operationType = operationAST.operation;
+
+    if (operationType === 'query') {
+      // Collect query names in this operation
+      const queries = operationAST.selectionSet.selections.map(sel => sel.name.value);
+
+      // If any query is public, skip auth check
+      const isPublicQuery = queries.some(query => PUBLIC_QUERIES.includes(query));
+
+      if (isPublicQuery) {
+        req.user = null; // Public query, no user needed
+        return next();
+      }
+    }
+
+    if (operationType === 'mutation') {
       // Collect mutation names in this operation
       const mutations = operationAST.selectionSet.selections.map(sel => sel.name.value);
 
@@ -30,12 +47,12 @@ const authMiddleware = async (req, res, next) => {
       const isPublicMutation = mutations.some(mutation => PUBLIC_MUTATIONS.includes(mutation));
 
       if (isPublicMutation) {
-        req.user = null;  // public, no user
+        req.user = null; // Public mutation, no user needed
         return next();
       }
     }
 
-    // Now do your existing token verification for protected ops
+    // Perform token verification for protected operations
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       req.user = null;
