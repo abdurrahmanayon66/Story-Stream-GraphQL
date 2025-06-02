@@ -10,6 +10,8 @@ module.exports = {
         const { username, email, password, image, fullName, userBio } =
           input || {};
 
+          console.log("input", input);
+
         const file = image ? await image : null;
 
         if (!file || typeof file.createReadStream !== "function") {
