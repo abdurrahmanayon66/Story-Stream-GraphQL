@@ -1,7 +1,6 @@
 const { parseResolveInfo } = require("graphql-parse-resolve-info");
 const generateSlug = require("../utils/generateSlug");
 
-// Helper function to build dynamic include based on GraphQL fields
 const buildIncludeFromFields = (fields) => {
   const include = {};
   if (fields.author) include.author = true;
@@ -11,7 +10,6 @@ const buildIncludeFromFields = (fields) => {
   return include;
 };
 
-// Helper function to transform blog data with base64 images
 const transformBlogData = (blog, fields) => {
   if (!blog) return null;
   
@@ -31,7 +29,7 @@ const transformBlogData = (blog, fields) => {
   };
 };
 
-// Helper function to build where clause based on filters
+
 const buildWhereClause = (filters) => {
   const where = {};
   
@@ -53,7 +51,7 @@ const buildWhereClause = (filters) => {
   return where;
 };
 
-// Helper function to build orderBy clause
+
 const buildOrderBy = (sortBy) => {
   const orderByMap = {
     'latest': { createdAt: 'desc' },
@@ -72,7 +70,6 @@ const buildOrderBy = (sortBy) => {
 
 module.exports = {
   Query: {
-    // Get paginated blogs with filters and sorting
     blogs: async (_, { input = {} }, { prisma, user }, info) => {
       const resolveInfo = parseResolveInfo(info);
       const fields = resolveInfo.fieldsByTypeName.Blog || {};
@@ -118,10 +115,9 @@ module.exports = {
       }
     },
 
-    // Get blogs for "For You" feed (personalized)
+   
     forYouBlogs: async (_, { input = {} }, { prisma, user }, info) => {
       if (!user) {
-        // Fallback to trending for non-authenticated users
         return module.exports.Query.blogs(_, { 
           input: { ...input, sortBy: 'trending' } 
         }, { prisma, user }, info);
@@ -135,7 +131,6 @@ module.exports = {
       const include = buildIncludeFromFields(fields);
       
       try {
-        // Get user's liked genres and followed authors
         const userPreferences = await prisma.user.findUnique({
           where: { id: user.id },
           include: {
@@ -187,7 +182,7 @@ module.exports = {
       }
     },
 
-    // Get blogs from followed authors
+
     followingBlogs: async (_, { input = {} }, { prisma, user }, info) => {
       if (!user) throw new Error("Authentication required");
       
@@ -249,7 +244,7 @@ module.exports = {
       }
     },
 
-    // Get single blog by ID
+   
     blog: async (_, { id }, { prisma }, info) => {
       const resolveInfo = parseResolveInfo(info);
       const fields = resolveInfo.fieldsByTypeName.Blog || {};
@@ -269,7 +264,7 @@ module.exports = {
       }
     },
 
-    // Get blog by slug
+    
     blogBySlug: async (_, { slug }, { prisma }, info) => {
       const resolveInfo = parseResolveInfo(info);
       const fields = resolveInfo.fieldsByTypeName.Blog || {};
@@ -292,6 +287,7 @@ module.exports = {
 
   Mutation: {
     createBlog: async (_, { title, content, image, genre }, { user, prisma }, info) => {
+      console.log("user", user);
       if (!user) throw new Error("Unauthorized");
 
       let imageBuffer = null;
@@ -344,71 +340,6 @@ module.exports = {
       } catch (err) {
         throw new Error(`Database operation failed: ${err.message}`);
       }
-    },
-
-    likeBlog: async (_, { blogId }, { user, prisma }, info) => {
-      if (!user) throw new Error("Unauthorized");
-
-      const blog = await prisma.blog.findUnique({ where: { id: blogId } });
-      if (!blog) throw new Error("Blog not found");
-
-      const existingLike = await prisma.like.findUnique({
-        where: { blogId_userId: { blogId, userId: user.id } },
-      });
-      
-      if (existingLike) throw new Error("Blog already liked");
-
-      try {
-        const like = await prisma.like.create({
-          data: { blogId, userId: user.id },
-          include: {
-            user: true,
-            blog: { include: { author: true } }
-          }
-        });
-
-        const resolveInfo = parseResolveInfo(info);
-        const fields = resolveInfo.fieldsByTypeName.Like || {};
-
-        return {
-          ...like,
-          user: like.user && fields.user ? {
-            ...like.user,
-            image: fields.user?.image && like.user.image 
-              ? Buffer.from(like.user.image).toString("base64") 
-              : null,
-            profileImage: fields.user?.profileImage ? like.user.profileImage : null,
-          } : null,
-          blog: like.blog && fields.blog ? {
-            ...like.blog,
-            image: fields.blog?.image && like.blog.image 
-              ? Buffer.from(like.blog.image).toString("base64") 
-              : null,
-          } : null,
-        };
-      } catch (error) {
-        throw new Error(`Failed to like blog: ${error.message}`);
-      }
-    },
-
-    unlikeBlog: async (_, { blogId }, { user, prisma }) => {
-      if (!user) throw new Error("Unauthorized");
-
-      try {
-        const existingLike = await prisma.like.findUnique({
-          where: { blogId_userId: { blogId, userId: user.id } },
-        });
-
-        if (!existingLike) throw new Error("Blog not liked yet");
-
-        await prisma.like.delete({
-          where: { blogId_userId: { blogId, userId: user.id } },
-        });
-
-        return { success: true, message: "Blog unliked successfully" };
-      } catch (error) {
-        throw new Error(`Failed to unlike blog: ${error.message}`);
-      }
-    },
+    }
   },
 };

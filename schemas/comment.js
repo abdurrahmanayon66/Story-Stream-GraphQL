@@ -5,7 +5,7 @@ module.exports = gql`
     id: Int!
     content: String!
     blog: Blog!
-    author: User!
+    user: User!
     createdAt: DateTime!
   }
 
