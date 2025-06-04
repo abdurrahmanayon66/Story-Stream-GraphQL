@@ -7,6 +7,7 @@ const PUBLIC_OPERATIONS = ['login', 'register', 'oauthLogin', 'isUsernameAvailab
 
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
+  console.log('authHeader', authHeader);
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {

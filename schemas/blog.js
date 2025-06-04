@@ -64,7 +64,7 @@ module.exports = gql`
     # Get paginated blogs with filters and sorting
     blogs(input: BlogsInput): BlogConnection!
     
-    # Get personalized feed for authenticated users
+    # Get personalized feed for authenticated users (now uses reusable functions)
     forYouBlogs(input: BlogsInput): BlogConnection!
     
     # Get blogs from followed authors
@@ -81,6 +81,12 @@ module.exports = gql`
     
     # Get most liked blogs
     mostLikedBlogs(input: BlogsInput): BlogConnection!
+    
+    # NEW: Get random blogs with pagination
+    randomBlogs(input: BlogsInput): BlogConnection!
+    
+    # NEW: Get blogs filtered by specific genres
+    blogsByGenres(genres: [String!]!, input: BlogsInput): BlogConnection!
   }
 
   extend type Mutation {

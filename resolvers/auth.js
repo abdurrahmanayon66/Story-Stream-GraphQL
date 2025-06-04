@@ -65,7 +65,7 @@ module.exports = {
           { id: createdUser.id },
           process.env.JWT_SECRET,
           {
-            expiresIn: "15m",
+            expiresIn: "1h",
           }
         );
         const refreshToken = jwt.sign(
@@ -122,7 +122,7 @@ module.exports = {
         }
 
         const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-          expiresIn: "15m",
+          expiresIn: "1h",
         });
         const refreshToken = jwt.sign(
           { id: user.id },
@@ -193,7 +193,7 @@ module.exports = {
         }
 
         const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-          expiresIn: "15m",
+          expiresIn: "1h",
         });
         const refreshToken = jwt.sign(
           { id: user.id },
@@ -234,7 +234,7 @@ module.exports = {
         if (!user) throw new Error("Invalid refresh token");
 
         const accessToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-          expiresIn: "15m",
+          expiresIn: "1h",
         });
         const newRefreshToken = jwt.sign(
           { id: user.id },
