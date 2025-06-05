@@ -8,6 +8,6 @@ module.exports = gql`
   }
 
   extend type Mutation {
-    bookmarkBlog(blogId: Int!): Bookmark!
+    toggleBookmark(blogId: Int!): Bookmark!
   }
 `;

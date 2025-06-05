@@ -6,6 +6,8 @@ const user = require('./user');
 const blog = require('./blog');
 const comment = require('./comment');
 const like = require('./like'); 
+const follower = require('./follower');
+const bookmark = require('./bookmark');
 
 module.exports = mergeResolvers([
   scalars,
@@ -14,4 +16,6 @@ module.exports = mergeResolvers([
   blog,
   comment,
   like,
+  follower,
+  bookmark
 ]);

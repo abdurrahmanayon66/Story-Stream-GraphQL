@@ -6,4 +6,8 @@ module.exports = gql`
     user: User!
     follower: User!
   }
+
+  extend type Mutation {
+    toggleFollow(followerId: Int!): Follower!
+  }
 `;
