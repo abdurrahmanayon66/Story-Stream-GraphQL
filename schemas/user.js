@@ -13,6 +13,9 @@ module.exports = gql`
     followers: [Follower!]!
     following: [Follower!]!
     bookmarks: [Bookmark!]!
+    sentNotifications: [Notification!]!
+    receivedNotifications: [Notification!]!
+    lastSeenNotification: Notification
   }
 
   type UsernameAvailability {
@@ -26,5 +29,8 @@ module.exports = gql`
 
   extend type Mutation {
     followUser(userId: Int!): Follower!
+    toggleFollow(followerId: Int!): Follower!
+    toggleLike(blogId: Int!): Like!
+    toggleBookmark(blogId: Int!): Bookmark!
   }
 `;

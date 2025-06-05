@@ -20,7 +20,7 @@ model User {
   createdAt    DateTime @default(now())
 
   lastSeenNotificationId Int?          @unique
-  lastSeenNotification   Notification? @relation(fields: [lastSeenNotificationId], references: [id])
+  lastSeenNotification   Notification? @relation("LastSeen", fields: [lastSeenNotificationId], references: [id])
 
   blogs     Blog[]
   comments  Comment[]
@@ -30,8 +30,8 @@ model User {
   followers Follower[] @relation("UserFollowed")
   following Follower[] @relation("UserFollower")
 
-  sentNotifications      Notification[] @relation("SenderRelation")
-  receivedNotifications  Notification[] @relation("RecipientRelation")
+  sentNotifications     Notification[] @relation("SenderRelation")
+  receivedNotifications Notification[] @relation("RecipientRelation")
 }
 
 model Follower {
@@ -105,6 +105,8 @@ model Notification {
   recipient User  @relation("RecipientRelation", fields: [recipientId], references: [id])
   sender    User  @relation("SenderRelation", fields: [senderId], references: [id])
   blog      Blog? @relation(fields: [blogId], references: [id])
+
+  seenBy     User? @relation("LastSeen")
 
   @@unique([recipientId, senderId, type])
   @@map("notifications")

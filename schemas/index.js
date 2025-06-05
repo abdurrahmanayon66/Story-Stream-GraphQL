@@ -7,6 +7,7 @@ const auth = require('./auth');
 const like = require('./like');
 const bookmark = require('./bookmark');
 const follower = require('./follower');
+const notification = require('./notification');
 
 const root = `
   type Query {
@@ -27,7 +28,8 @@ const typeDefs = mergeTypeDefs([
   auth,
   like,
   bookmark,
-  follower
+  follower,
+  notification
 ]);
 
 module.exports = typeDefs;

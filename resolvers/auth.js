@@ -57,7 +57,8 @@ module.exports = {
             password: hashedPassword,
             image: imageBuffer,
             fullName: fullName || null,
-            userBio: userBio || null,
+            userBio: userBio || null,    
+            lastSeenNotificationId: null   
           },
         });
 
@@ -181,6 +182,7 @@ module.exports = {
               profileImage: profileImage || null,
               password: null,
               image: null,
+              lastSeenNotificationId: null,
             },
           });
         } else if (!user.providerId && user.email === email) {
