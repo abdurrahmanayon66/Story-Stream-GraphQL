@@ -9,6 +9,6 @@ module.exports = gql`
   }
 
   extend type Mutation {
-    likeBlog(blogId: Int!): Like!
+    toggleLike(blogId: Int!): Like!
   }
 `;

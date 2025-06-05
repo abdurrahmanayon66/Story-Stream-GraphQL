@@ -28,7 +28,6 @@ const transformBlogData = (blog, fields) => {
     comments: blog.comments || [],
     likes: blog.likes || [],
     bookmarks: blog.bookmarks || [],
-    // Add counts if they're not coming from Prisma directly
     likesCount: blog.likes?.length || 0,
     commentsCount: blog.comments?.length || 0,
     bookmarksCount: blog.bookmarks?.length || 0,
@@ -46,8 +45,6 @@ module.exports = {
         include,
         orderBy: { createdAt: "desc" },
       });
-
-      // Return the array directly - this matches your GET_BLOGS query structure
       return blogs.map((blog) => transformBlogData(blog, fields));
     },
 
