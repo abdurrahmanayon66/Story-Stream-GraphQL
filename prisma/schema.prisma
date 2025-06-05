@@ -55,7 +55,7 @@ model Blog {
   title     String   @unique @db.VarChar(255)
   slug      String   @unique @db.VarChar(255)
   description String
-  content   Json
+  content     String     @db.Text
   image     Bytes
   genre     String[]
   authorId  Int
