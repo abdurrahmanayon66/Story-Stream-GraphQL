@@ -423,7 +423,7 @@ module.exports = {
   Mutation: {
     createBlog: async (
       _,
-      { title, content, image, genre },
+      { title, content, image, genre, description },
       { user, prisma },
       info
     ) => {
@@ -460,6 +460,7 @@ module.exports = {
             title,
             slug,
             content,
+            description,
             image: imageBuffer,
             genre,
             authorId: user.id,

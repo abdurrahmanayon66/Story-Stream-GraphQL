@@ -5,6 +5,7 @@ module.exports = gql`
     id: Int!
     title: String!
     slug: String!
+    description: String!
     content: JSON!
     image: String
     genre: [String!]!
@@ -92,6 +93,7 @@ module.exports = gql`
   extend type Mutation {
     createBlog(
       title: String!
+      description: String!
       content: JSON!
       image: Upload
       genre: [String!]!
