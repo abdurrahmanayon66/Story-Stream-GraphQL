@@ -8,62 +8,69 @@ generator client {
 }
 
 model User {
-  id           Int        @id @default(autoincrement())
-  username     String     @unique @db.VarChar(255)
-  fullName     String?    @db.VarChar(255)
-  userBio      String?    @db.Text
-  email        String     @unique @db.VarChar(255)
-  password     String?    @db.VarChar(255)
-  providerId   String?    @unique @db.VarChar(255)
+  id           Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(255)
+  fullName     String?  @db.VarChar(255)
+  userBio      String?  @db.Text
+  email        String   @unique @db.VarChar(255)
+  password     String?  @db.VarChar(255)
+  providerId   String?  @unique @db.VarChar(255)
   image        Bytes?
-  profileImage String?    @db.VarChar(255)
-  createdAt    DateTime   @default(now())
+  profileImage String?  @db.VarChar(255)
+  createdAt    DateTime @default(now())
 
-  blogs        Blog[]
-  comments     Comment[]
-  likes        Like[]
-  bookmarks    Bookmark[]
+  lastSeenNotificationId Int?          @unique
+  lastSeenNotification   Notification? @relation(fields: [lastSeenNotificationId], references: [id])
 
-  followers    Follower[] @relation("UserFollowed")
-  following    Follower[] @relation("UserFollower")
+  blogs     Blog[]
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+
+  followers Follower[] @relation("UserFollowed")
+  following Follower[] @relation("UserFollower")
+
+  sentNotifications      Notification[] @relation("SenderRelation")
+  receivedNotifications  Notification[] @relation("RecipientRelation")
 }
 
 model Follower {
-  id         Int   @id @default(autoincrement())
+  id         Int @id @default(autoincrement())
   userId     Int
   followerId Int
 
-  user       User  @relation("UserFollowed", fields: [userId], references: [id])
-  follower   User  @relation("UserFollower", fields: [followerId], references: [id])
+  user     User @relation("UserFollowed", fields: [userId], references: [id])
+  follower User @relation("UserFollower", fields: [followerId], references: [id])
 
   @@unique([userId, followerId])
 }
 
 model Bookmark {
-  id      Int   @id @default(autoincrement())
-  userId  Int
-  blogId  Int
+  id     Int @id @default(autoincrement())
+  userId Int
+  blogId Int
 
-  user    User  @relation(fields: [userId], references: [id])
-  blog    Blog  @relation(fields: [blogId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  blog Blog @relation(fields: [blogId], references: [id])
 
   @@unique([userId, blogId])
 }
 
 model Blog {
-  id        Int      @id @default(autoincrement())
-  title     String   @unique @db.VarChar(255)
-  slug      String   @unique @db.VarChar(255)
-  description String
-  content     String     @db.Text
-  image     Bytes
-  genre     String[]
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  comments  Comment[]
-  likes     Like[]
-  bookmarks Bookmark[]
-  createdAt DateTime @default(now())
+  id           Int            @id @default(autoincrement())
+  title        String         @unique @db.VarChar(255)
+  slug         String         @unique @db.VarChar(255)
+  description  String
+  content      String         @db.Text
+  image        Bytes
+  genre        String[]
+  authorId     Int
+  author       User           @relation(fields: [authorId], references: [id])
+  comments     Comment[]
+  likes        Like[]
+  bookmarks    Bookmark[]
+  createdAt    DateTime       @default(now())
+  Notification Notification[]
 }
 
 model Comment {
@@ -85,4 +92,20 @@ model Like {
   createdAt DateTime @default(now())
 
   @@unique([blogId, userId])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  recipientId Int
+  senderId    Int
+  type        String   @db.VarChar(255)
+  blogId      Int?
+  createdAt   DateTime @default(now())
+
+  recipient User  @relation("RecipientRelation", fields: [recipientId], references: [id])
+  sender    User  @relation("SenderRelation", fields: [senderId], references: [id])
+  blog      Blog? @relation(fields: [blogId], references: [id])
+
+  @@unique([recipientId, senderId, type])
+  @@map("notifications")
 }
