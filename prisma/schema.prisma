@@ -54,6 +54,7 @@ model Blog {
   id        Int      @id @default(autoincrement())
   title     String   @unique @db.VarChar(255)
   slug      String   @unique @db.VarChar(255)
+  description String
   content   Json
   image     Bytes
   genre     String[]
