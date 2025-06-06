@@ -26,6 +26,7 @@ module.exports = gql`
   extend type Query {
     currentUser: User
     isUsernameAvailable(username: String!): UsernameAvailability!
+    followerSuggestions: [User!]!
   }
 
   extend type Mutation {
