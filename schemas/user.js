@@ -31,7 +31,6 @@ module.exports = gql`
 
   extend type Mutation {
     followUser(userId: Int!): Follower!
-    toggleFollow(followerId: Int!): Follower!
     toggleBookmark(blogId: Int!): Bookmark!
   }
 `;
