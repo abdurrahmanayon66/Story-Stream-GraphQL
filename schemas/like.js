@@ -1,14 +1,35 @@
-const { gql } = require('graphql-tag');
+const { gql } = require("graphql-tag");
 
 module.exports = gql`
+
   type Like {
     id: Int!
-    blog: Blog!
-    user: User!
+    blogId: Int!
+    userId: Int!
     createdAt: DateTime!
+    user: User!
+    blog: Blog!
   }
 
-  extend type Mutation {
-    toggleLike(blogId: Int!): Like!
+  input LikeInput {
+    blogId: Int!
+  }
+
+  type ToggleLikePayload {
+    success: Boolean!
+    message: String!
+    isLiked: Boolean!
+    like: Like
+  }
+
+  type Query {
+    likes: [Like!]!
+    like(id: Int!): Like
+  }
+
+  type Mutation {
+    createLike(input: LikeInput!): Like!
+    deleteLike(id: Int!): Boolean!
+    toggleLike(blogId: Int!): ToggleLikePayload!
   }
 `;

@@ -1,4 +1,4 @@
-const { gql } = require('graphql-tag');
+const { gql } = require("graphql-tag");
 
 module.exports = gql`
   type User {
@@ -16,6 +16,7 @@ module.exports = gql`
     sentNotifications: [Notification!]!
     receivedNotifications: [Notification!]!
     lastSeenNotification: Notification
+    isFollowing: Boolean
   }
 
   type UsernameAvailability {
@@ -30,7 +31,6 @@ module.exports = gql`
   extend type Mutation {
     followUser(userId: Int!): Follower!
     toggleFollow(followerId: Int!): Follower!
-    toggleLike(blogId: Int!): Like!
     toggleBookmark(blogId: Int!): Bookmark!
   }
 `;

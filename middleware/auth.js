@@ -1,13 +1,12 @@
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
-const { parse, getOperationAST } = require('graphql');
 
 const prisma = new PrismaClient();
-const PUBLIC_OPERATIONS = ['login', 'register', 'oauthLogin', 'isUsernameAvailable'];
 
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  console.log('authHeader', authHeader);
+
+  console.log('Authorization header:', authHeader);
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
@@ -30,27 +29,9 @@ const authMiddleware = async (req, res, next) => {
     }
   }
 
-  try {
-    const document = parse(req.body.query);
-    const operationAST = getOperationAST(document, req.body.operationName);
-
-    if (!operationAST) {
-      return res.status(400).json({ error: 'Invalid operation' });
-    }
-
-    const operationNames = operationAST.selectionSet.selections.map(sel => sel.name.value);
-    const isPublic = operationNames.every(name => PUBLIC_OPERATIONS.includes(name));
-
-    if (isPublic) {
-      req.user = null;
-      return next();
-    }
-
-    return res.status(401).json({ error: 'Unauthorized: Authentication required' });
-  } catch (err) {
-    console.error('GraphQL parsing error:', err.message);
-    return res.status(400).json({ error: 'Bad request: Failed to parse query' });
-  }
+  // No token provided – allow access as unauthenticated user
+  req.user = null;
+  return next();
 };
 
 module.exports = authMiddleware;
