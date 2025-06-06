@@ -9,29 +9,68 @@ generator client {
 
 model User {
   id           Int      @id @default(autoincrement())
-  username     String   @db.VarChar(255)
+  username     String   @unique @db.VarChar(255)
+  fullName     String?  @db.VarChar(255)
+  userBio      String?  @db.Text
   email        String   @unique @db.VarChar(255)
   password     String?  @db.VarChar(255)
   providerId   String?  @unique @db.VarChar(255)
-  image        Bytes?   // Optional: for regular users' uploaded images
-  profileImage String?  @db.VarChar(255) // Optional: for Google users' profile picture URL
+  image        Bytes?
+  profileImage String?  @db.VarChar(255)
   createdAt    DateTime @default(now())
-  blogs        Blog[]   // One-to-many relation with Blog
-  comments     Comment[] // One-to-many relation with Comment
-  likes        Like[]   // One-to-many relation with Like
+
+  lastSeenNotificationId Int?          @unique
+  lastSeenNotification   Notification? @relation("LastSeen", fields: [lastSeenNotificationId], references: [id])
+
+  blogs     Blog[]
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+
+  followers Follower[] @relation("UserFollowed")
+  following Follower[] @relation("UserFollower")
+
+  sentNotifications     Notification[] @relation("SenderRelation")
+  receivedNotifications Notification[] @relation("RecipientRelation")
+}
+
+model Follower {
+  id         Int @id @default(autoincrement())
+  userId     Int
+  followerId Int
+
+  user     User @relation("UserFollowed", fields: [userId], references: [id])
+  follower User @relation("UserFollower", fields: [followerId], references: [id])
+
+  @@unique([userId, followerId])
+}
+
+model Bookmark {
+  id     Int @id @default(autoincrement())
+  userId Int
+  blogId Int
+
+  user User @relation(fields: [userId], references: [id])
+  blog Blog @relation(fields: [blogId], references: [id])
+
+  @@unique([userId, blogId])
 }
 
 model Blog {
-  id        Int      @id @default(autoincrement())
-  title     String   @db.VarChar(255)
-  content   Json     // Changed to Json
-  image     Bytes
-  genre     String[] // Added genre field as array of strings
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  comments  Comment[] // One-to-many relation with Comment
-  likes     Like[]   // One-to-many relation with Like
-  createdAt DateTime @default(now())
+  id           Int            @id @default(autoincrement())
+  title        String         @unique @db.VarChar(255)
+  slug         String         @unique @db.VarChar(255)
+  description  String
+  content      String         @db.Text
+  image        Bytes
+  genre        String[]
+  authorId     Int
+  author       User           @relation(fields: [authorId], references: [id])
+  comments     Comment[]
+  likes        Like[]
+  bookmarks    Bookmark[]
+  createdAt    DateTime       @default(now())
+  Notification Notification[]
 }
 
 model Comment {
@@ -39,8 +78,8 @@ model Comment {
   content   String   @db.Text
   blogId    Int
   blog      Blog     @relation(fields: [blogId], references: [id])
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 }
 
@@ -51,5 +90,24 @@ model Like {
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
-  @@unique([blogId, userId]) // Ensure a user can only like a blog once
+
+  @@unique([blogId, userId])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  recipientId Int
+  senderId    Int
+  type        String   @db.VarChar(255)
+  blogId      Int?
+  createdAt   DateTime @default(now())
+
+  recipient User  @relation("RecipientRelation", fields: [recipientId], references: [id])
+  sender    User  @relation("SenderRelation", fields: [senderId], references: [id])
+  blog      Blog? @relation(fields: [blogId], references: [id])
+
+  seenBy     User? @relation("LastSeen")
+
+  @@unique([recipientId, senderId, type])
+  @@map("notifications")
 }

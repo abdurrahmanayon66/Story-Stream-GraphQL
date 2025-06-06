@@ -1,89 +1,35 @@
-const { gql } = require('graphql-tag');
+const { mergeTypeDefs } = require('@graphql-tools/merge');
+const scalars = require('./scalars');
+const user = require('./user');
+const blog = require('./blog');
+const comment = require('./comment');
+const auth = require('./auth');
+const like = require('./like');
+const bookmark = require('./bookmark');
+const follower = require('./follower');
+const notification = require('./notification');
 
-const typeDefs = gql`
-  scalar Upload
-  scalar DateTime
-  scalar JSON
-
-  type User {
-    id: Int!
-    username: String!
-    email: String!
-    image: String
-    profileImage: String
-    createdAt: DateTime!
-  }
-
-  type Blog {
-    id: Int!
-    title: String!
-    content: JSON! # Changed from String! to JSON!
-    image: String!  # Base64 string
-    genre: [String!]! # New field
-    author: User!
-    createdAt: DateTime!
-    comments: [Comment!]!
-    likes: [Like!]!
-  }
-
-  type Comment {
-    id: Int!
-    content: String!
-    blog: Blog!
-    author: User!
-    createdAt: DateTime!
-  }
-
-  type Like {
-    id: Int!
-    blog: Blog!
-    user: User!
-    createdAt: DateTime!
-  }
-
-  type AuthPayload {
-    accessToken: String!
-    refreshToken: String!
-    user: User!
-  }
-
-  type AuthError {
-    message: String!
-    code: String
-  }
-
-  union AuthResult = AuthPayload | AuthError
-
-  input RegisterInput {
-    username: String!
-    email: String!
-    password: String!
-    image: Upload!
-  }
-
-  input OAuthInput {
-    provider: String!
-    providerId: String!
-    email: String!
-    name: String
-    profileImage: String
-  }
-
+const root = `
   type Query {
-    currentUser: User
-    blogs: [Blog!]!
-    blog(id: Int!): Blog
+    _empty: String
   }
 
   type Mutation {
-    register(input: RegisterInput!): AuthResult!
-    login(email: String!, password: String!): AuthResult!
-    oauthLogin(input: OAuthInput!): AuthResult!
-    refreshToken(refreshToken: String!): AuthPayload!
-    createBlog(title: String!, content: JSON!, image: Upload!, genre: [String!]!): Blog!
-    createComment(blogId: Int!, content: String!): Comment!
-    likeBlog(blogId: Int!): Like!
+    _empty: String
   }
 `;
+
+const typeDefs = mergeTypeDefs([
+  root,
+  scalars,
+  user,
+  blog,
+  comment,
+  auth,
+  like,
+  bookmark,
+  follower,
+  notification
+]);
 
 module.exports = typeDefs;
