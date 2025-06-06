@@ -7,7 +7,13 @@ module.exports = gql`
     follower: User!
   }
 
-  extend type Mutation {
-    toggleFollow(followerId: Int!): Follower!
-  }
+  type ToggleFollowResponse {
+  success: Boolean!
+  message: String!
+  isFollowing: Boolean!
+}
+
+extend type Mutation {
+  toggleFollow(followerId: Int!): ToggleFollowResponse!
+}
 `;
