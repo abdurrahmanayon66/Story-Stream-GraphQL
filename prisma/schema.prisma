@@ -32,6 +32,7 @@ model User {
 
   sentNotifications     Notification[] @relation("SenderRelation")
   receivedNotifications Notification[] @relation("RecipientRelation")
+  CommentLike           CommentLike[]
 }
 
 model Follower {
@@ -74,13 +75,28 @@ model Blog {
 }
 
 model Comment {
+  id              Int           @id @default(autoincrement())
+  content         String        @db.Text
+  blogId          Int
+  blog            Blog          @relation(fields: [blogId], references: [id])
+  userId          Int
+  user            User          @relation(fields: [userId], references: [id])
+  createdAt       DateTime      @default(now())
+  parentCommentId Int?
+  parentComment   Comment?      @relation("CommentToReplies", fields: [parentCommentId], references: [id])
+  replies         Comment[]     @relation("CommentToReplies")
+  likes           CommentLike[]
+}
+
+model CommentLike {
   id        Int      @id @default(autoincrement())
-  content   String   @db.Text
-  blogId    Int
-  blog      Blog     @relation(fields: [blogId], references: [id])
+  commentId Int
+  comment   Comment  @relation(fields: [commentId], references: [id])
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+
+  @@unique([commentId, userId])
 }
 
 model Like {
@@ -106,7 +122,7 @@ model Notification {
   sender    User  @relation("SenderRelation", fields: [senderId], references: [id])
   blog      Blog? @relation(fields: [blogId], references: [id])
 
-  seenBy     User? @relation("LastSeen")
+  seenBy User? @relation("LastSeen")
 
   @@unique([recipientId, senderId, type])
   @@map("notifications")
