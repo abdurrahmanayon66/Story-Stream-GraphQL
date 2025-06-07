@@ -6,12 +6,16 @@ module.exports = {
       if (!user) throw new Error("Unauthorized");
 
       const existingFollow = await prisma.follower.findUnique({
-        where: { userId_followerId: { userId: user.id, followerId } },
+        where: {
+          userId_followerId: { userId: followerId, followerId: user.id },
+        },
       });
 
       if (existingFollow) {
         await prisma.follower.delete({
-          where: { userId_followerId: { userId: user.id, followerId } },
+          where: {
+            userId_followerId: { userId: followerId, followerId: user.id },
+          },
         });
         return {
           success: true,
@@ -20,7 +24,7 @@ module.exports = {
         };
       } else {
         await prisma.follower.create({
-          data: { userId: user.id, followerId },
+          data: { userId: followerId, followerId: user.id },
         });
         return {
           success: true,

@@ -1,5 +1,6 @@
 const { parseResolveInfo } = require("graphql-parse-resolve-info");
 const generateSlug = require("../utils/generateSlug");
+const sharp = require("sharp");
 
 const buildIncludeFromFields = (fields, user) => {
   return {
@@ -220,6 +221,9 @@ module.exports = {
         const chunks = [];
         for await (const chunk of stream) chunks.push(chunk);
         imageBuffer = Buffer.concat(chunks);
+        const webpImageBuffer = await sharp(imageBuffer)
+          .webp({ lossless: true })
+          .toBuffer();
 
         if (!imageBuffer.length) throw new Error("Image file is empty");
       }
@@ -235,7 +239,7 @@ module.exports = {
           slug,
           content,
           description,
-          image: imageBuffer,
+          image:  webpImageBuffer,
           genre,
           authorId: user.id,
         },

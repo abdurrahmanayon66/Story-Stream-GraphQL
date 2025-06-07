@@ -2,6 +2,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { parseResolveInfo } = require("graphql-parse-resolve-info");
+const sharp = require("sharp");
 
 module.exports = {
   Mutation: {
@@ -19,14 +20,14 @@ module.exports = {
           };
         }
 
-        if (!email.includes("@")) {
+        if (!email || !email.includes("@")) {
           return {
             message: "Invalid email format",
             code: "INVALID_EMAIL",
           };
         }
 
-        if (password.length < 6) {
+        if (!password || password.length < 6) {
           return {
             message: "Password must be at least 6 characters long",
             code: "INVALID_PASSWORD",
@@ -48,6 +49,10 @@ module.exports = {
         }
         const imageBuffer = Buffer.concat(chunks);
 
+        const webpImageBuffer = await sharp(imageBuffer)
+          .webp({ lossless: true })
+          .toBuffer();
+
         const hashedPassword = await bcrypt.hash(password, 12);
 
         const createdUser = await prisma.user.create({
@@ -55,26 +60,23 @@ module.exports = {
             username,
             email,
             password: hashedPassword,
-            image: imageBuffer,
+            image: webpImageBuffer, 
             fullName: fullName || null,
-            userBio: userBio || null,    
-            lastSeenNotificationId: null   
+            userBio: userBio || null,
+            lastSeenNotificationId: null,
           },
         });
 
         const accessToken = jwt.sign(
           { id: createdUser.id },
           process.env.JWT_SECRET,
-          {
-            expiresIn: "1h",
-          }
+          { expiresIn: "1h" }
         );
+
         const refreshToken = jwt.sign(
           { id: createdUser.id },
           process.env.JWT_REFRESH_SECRET,
-          {
-            expiresIn: "7d",
-          }
+          { expiresIn: "7d" }
         );
 
         return {
