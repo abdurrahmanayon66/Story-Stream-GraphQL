@@ -23,10 +23,16 @@ module.exports = gql`
     exists: Boolean!
   }
 
+  type FollowerSuggestionsResponse {
+    users: [User!]!
+    nextCursor: Int
+    hasMore: Boolean!
+  }
+
   extend type Query {
     currentUser: User
     isUsernameAvailable(username: String!): UsernameAvailability!
-    followerSuggestions: [User!]!
+    followerSuggestions(cursor: Int, limit: Int): FollowerSuggestionsResponse!
   }
 
   extend type Mutation {
