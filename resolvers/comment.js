@@ -2,34 +2,88 @@ const { parseResolveInfo } = require("graphql-parse-resolve-info");
 
 module.exports = {
   Query: {
-    commentsByBlogId: async (_, { blogId }, { prisma }, info) => {
+   commentsByBlogId: async (_, { blogId }, { prisma, user }, info) => {
       const resolveInfo = parseResolveInfo(info);
       const fields = resolveInfo?.fieldsByTypeName?.Comment || {};
-
-      const comments = await prisma.comment.findMany({
+      const allComments = await prisma.comment.findMany({
         where: { blogId },
         orderBy: { createdAt: "asc" },
         include: {
-          user: !!fields.user,
-          parentComment: !!fields.parentCommentId,
+          user: true,
         },
       });
 
-      return comments.map((comment) => ({
-        ...comment,
-        user: comment.user
-          ? {
-              ...comment.user,
-              image:
-                fields.user?.image && comment.user.image
-                  ? Buffer.from(comment.user.image).toString("base64")
-                  : null,
-              profileImage: fields.user?.profileImage
-                ? comment.user.profileImage
-                : null,
-            }
-          : null,
-      }));
+      const parentComments = allComments.filter(comment => comment.parentCommentId === null);
+      const childComments = allComments.filter(comment => comment.parentCommentId !== null);
+
+      const childrenByParentId = {};
+      childComments.forEach(child => {
+        if (!childrenByParentId[child.parentCommentId]) {
+          childrenByParentId[child.parentCommentId] = [];
+        }
+        childrenByParentId[child.parentCommentId].push(child);
+      });
+
+      const allCommentIds = allComments.map(comment => comment.id);
+
+      const likeCounts = await prisma.commentLike.groupBy({
+        by: ['commentId'],
+        where: {
+          commentId: { in: allCommentIds }
+        },
+        _count: {
+          commentId: true
+        }
+      });
+
+      const likeCountMap = {};
+      likeCounts.forEach(item => {
+        likeCountMap[item.commentId] = item._count.commentId;
+      });
+
+      let userLikedComments = [];
+      if (user && fields.hasLiked) {
+        const userLikes = await prisma.commentLike.findMany({
+          where: {
+            commentId: { in: allCommentIds },
+            userId: user.id
+          },
+          select: { commentId: true }
+        });
+        userLikedComments = userLikes.map(like => like.commentId);
+      }
+
+      const formatComment = (comment, isParent = false) => {
+        const formattedComment = {
+          ...comment,
+          user: comment.user
+            ? {
+                ...comment.user,
+                image: comment.user.image ? Buffer.from(comment.user.image).toString("base64") : null,
+                profileImage: comment.user.profileImage || null,
+              }
+            : null,
+          likeCount: likeCountMap[comment.id] || 0,
+          hasLiked: userLikedComments.includes(comment.id),
+          replies: [],
+          replyCount: 0
+        };
+
+        if (isParent && childrenByParentId[comment.id]) {
+          formattedComment.replies = childrenByParentId[comment.id].map(child => 
+            formatComment(child, false)
+          );
+          formattedComment.replyCount = formattedComment.replies.length;
+        }
+
+        return formattedComment;
+      };
+
+      const formattedParentComments = parentComments.map(parent => 
+        formatComment(parent, true)
+      );
+
+      return formattedParentComments;
     },
   },
   Mutation: {
