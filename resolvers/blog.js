@@ -88,6 +88,48 @@ module.exports = {
       return transformBlogData(blog, fields, user);
     },
 
+    authorByBlogId: async (_, { blogId }, { prisma }, info) => {
+      const blog = await prisma.blog.findUnique({
+        where: { id: parseInt(blogId) },
+        include: { author: true },
+      });
+
+      if (!blog) throw new Error("Blog not found");
+      if (!blog.author) throw new Error("Author not found");
+
+      // Get follower count (people following this author)
+      const followerCount = await prisma.follower.count({
+        where: { userId: blog.author.id }
+      });
+
+      // Get following count (people this author follows)
+      const followingCount = await prisma.follower.count({
+        where: { followerId: blog.author.id }
+      });
+
+      return {
+        ...blog.author,
+        image: blog.author.image ? Buffer.from(blog.author.image).toString("base64") : null,
+        profileImage: blog.author.profileImage || null,
+        followerCount,
+        followingCount
+      };
+    },
+
+    blogsByAuthorId: async (_, { authorId }, { prisma, user }, info) => {
+      const resolveInfo = parseResolveInfo(info);
+      const fields = resolveInfo.fieldsByTypeName.Blog || {};
+      const include = buildIncludeFromFields(fields, user);
+
+      const blogs = await prisma.blog.findMany({
+        where: { authorId: parseInt(authorId) },
+        include,
+        orderBy: { createdAt: "desc" },
+      });
+
+      return blogs.map((blog) => transformBlogData(blog, fields, user));
+    },
+
     forYouBlogs: async (_, __, { user, prisma }, info) => {
       console.log("Fetching blogs for you:");
       if (!user) {

@@ -11,9 +11,10 @@ type Comment {
   blog: Blog
   user: User
   parentComment: Comment
-  replies: [Comment!]!
+  replies: [Comment!]
   likeCount: Int!
   hasLiked: Boolean!
+  replyCount: Int
 }
 
   type CommentLike {

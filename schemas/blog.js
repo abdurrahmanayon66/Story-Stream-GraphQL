@@ -20,6 +20,8 @@ module.exports = gql`
   extend type Query {
     blogs: [Blog!]!
     blog(id: Int!): Blog
+    authorByBlogId(blogId: Int!): User!
+    blogsByAuthorId(authorId: Int!): [Blog!]!
     forYouBlogs: [Blog!]!
     mostLikedBlogs: [Blog!]!
     myBlogs: [Blog!]!

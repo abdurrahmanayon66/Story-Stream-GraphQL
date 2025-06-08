@@ -17,6 +17,8 @@ module.exports = gql`
     receivedNotifications: [Notification!]!
     lastSeenNotification: Notification
     isFollowing: Boolean
+    followerCount: Int
+    followingCount: Int
   }
 
   type UsernameAvailability {
